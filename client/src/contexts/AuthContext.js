@@ -46,26 +46,21 @@ export function AuthProvider({ children }) {
           headers: {
             'Content-Type': 'application/json',
           },
+          withCredentials: true,
         }
       );
 
       console.log('Login response:', response.data);
       const { token, user } = response.data;
 
-      if (!token || !user) {
-        console.error('Invalid response format:', response.data);
-        return false;
+      if (token && user) {
+        localStorage.setItem('token', token);
+        setUser(user);
+        return true;
       }
-
-      localStorage.setItem('token', token);
-      setUser(user);
-      return true;
+      return false;
     } catch (error) {
-      console.error('Login error:', {
-        message: error.message,
-        response: error.response?.data,
-        status: error.response?.status,
-      });
+      console.error('Login error:', error);
       return false;
     }
   };

@@ -77,22 +77,26 @@ const login = async (req, res) => {
 
     const user = await User.findOne({ email });
     if (!user) {
+      console.log('User not found:', email);
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
+      console.log('Password mismatch for:', email);
       return res.status(400).json({ message: 'Invalid credentials' });
     }
-
-    user.isOnline = true;
-    user.lastActive = new Date();
-    await user.save();
 
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
       expiresIn: '7d',
     });
 
+    // Update user status
+    user.isOnline = true;
+    user.lastActive = new Date();
+    await user.save();
+
+    console.log('Login successful for:', email);
     res.json({
       token,
       user: {

@@ -18,19 +18,27 @@ const app = express();
 const server = http.createServer(app);
 const io = socketio(server, {
   cors: {
-    origin: 'http://localhost:3000',
+    origin: '*',
     methods: ['GET', 'POST'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
   },
 });
 
 app.use(
   cors({
-    origin: 'http://localhost:3000',
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    origin: '*', // Allow all origins in development
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
+    preflightContinue: true,
+    optionsSuccessStatus: 204,
   })
 );
+
+// Add OPTIONS handling for preflight requests
+app.options('*', cors());
+
 app.use(express.json());
 
 // Routes
@@ -43,12 +51,21 @@ mongoose
   .connect(process.env.MONGODB_URI, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
+    serverSelectionTimeoutMS: 5000, // Add timeout
+    family: 4, // Use IPv4, skip trying IPv6
   })
   .then(async () => {
-    console.log('✓ Connected to MongoDB');
+    console.log('✓ Connected to MongoDB at:', process.env.MONGODB_URI);
     await initializeDemoUsers();
     console.log('✓ Demo users initialized');
-    console.log('✓ Server is ready');
+
+    // Verify demo users
+    const demoUser = await User.findOne({ email: 'john@demo.com' });
+    if (demoUser) {
+      console.log('✓ Demo users verified');
+    } else {
+      console.error('Demo users not found');
+    }
   })
   .catch((err) => {
     console.error('MongoDB connection error:', err);
