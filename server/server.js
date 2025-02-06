@@ -18,26 +18,34 @@ const app = express();
 const server = http.createServer(app);
 const io = socketio(server, {
   cors: {
-    origin: '*',
+    origin: allowedOrigins,
     methods: ['GET', 'POST'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
   },
 });
 
+const allowedOrigins = [
+  'http://localhost:3000',
+  'https://lucky-pegasus-e54bd8.netlify.app',
+  'https://chatbot-mk.netlify.app',
+];
+
 app.use(
   cors({
-    origin: '*', // Allow all origins in development
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
-    preflightContinue: true,
-    optionsSuccessStatus: 204,
+    optionsSuccessStatus: 200,
   })
 );
-
-// Add OPTIONS handling for preflight requests
-app.options('*', cors());
 
 app.use(express.json());
 

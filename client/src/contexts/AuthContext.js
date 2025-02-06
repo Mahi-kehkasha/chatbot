@@ -47,6 +47,7 @@ export function AuthProvider({ children }) {
             'Content-Type': 'application/json',
           },
           withCredentials: true,
+          timeout: 10000, // 10 second timeout
         }
       );
 
@@ -60,7 +61,7 @@ export function AuthProvider({ children }) {
       }
       return false;
     } catch (error) {
-      console.error('Login error:', error);
+      console.error('Login error:', error.message);
       return false;
     }
   };
