@@ -1,6 +1,6 @@
 {
-  "name": "chat-app-client",
-  "version": "0.1.0",
+  "name": "chatbot-mk",
+  "version": "1.0.0",
   "private": true,
   "dependencies": {
     "@headlessui/react": "^1.7.19",
