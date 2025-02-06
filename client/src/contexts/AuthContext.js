@@ -19,14 +19,16 @@ export function AuthProvider({ children }) {
 
   const fetchUser = async (token) => {
     try {
-      const response = await axios.get(
-        'http://localhost:5000/api/users/profile',
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const response = await axios.get(`${config.API_URL}/api/users/profile`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        withCredentials: true,
+      });
       setUser(response.data);
     } catch (error) {
+      console.error('Fetch user error:', error);
       localStorage.removeItem('token');
     } finally {
       setLoading(false);
@@ -38,30 +40,28 @@ export function AuthProvider({ children }) {
       console.log('Attempting login for:', email);
       const response = await axios.post(
         `${config.API_URL}/api/auth/login`,
-        {
-          email,
-          password,
-        },
+        { email, password },
         {
           headers: {
             'Content-Type': 'application/json',
           },
           withCredentials: true,
-          timeout: 10000, // 10 second timeout
+          timeout: 10000,
         }
       );
 
-      console.log('Login response:', response.data);
-      const { token, user } = response.data;
-
-      if (token && user) {
-        localStorage.setItem('token', token);
-        setUser(user);
+      if (response.data?.token) {
+        localStorage.setItem('token', response.data.token);
+        setUser(response.data.user);
         return true;
       }
       return false;
     } catch (error) {
-      console.error('Login error:', error.message);
+      console.error('Login error:', {
+        message: error.message,
+        data: error.response?.data,
+        status: error.response?.status,
+      });
       return false;
     }
   };

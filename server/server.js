@@ -14,38 +14,50 @@ const { initializeDemoUsers } = require('./controllers/authController');
 
 dotenv.config();
 
-const app = express();
-const server = http.createServer(app);
-const io = socketio(server, {
-  cors: {
-    origin: allowedOrigins,
-    methods: ['GET', 'POST'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true,
-  },
-});
-
-const allowedOrigins = [
+// Define allowedOrigins before using it
+const whitelist = [
   'http://localhost:3000',
   'https://lucky-pegasus-e54bd8.netlify.app',
   'https://chatbot-mk.netlify.app',
 ];
 
+const app = express();
+const server = http.createServer(app);
+
+// Update CORS configuration
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Credentials', true);
+  res.header('Access-Control-Allow-Origin', req.headers.origin);
+  res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
+  res.header(
+    'Access-Control-Allow-Headers',
+    'Origin, X-Requested-With, Content-Type, Accept, Authorization'
+  );
+  next();
+});
+
 app.use(
   cors({
     origin: function (origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) {
+      if (!origin || whitelist.includes(origin)) {
         callback(null, true);
       } else {
         callback(new Error('Not allowed by CORS'));
       }
     },
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
-    optionsSuccessStatus: 200,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   })
 );
+
+// Socket.IO setup
+const io = socketio(server, {
+  cors: {
+    origin: whitelist,
+    methods: ['GET', 'POST'],
+    credentials: true,
+  },
+});
 
 app.use(express.json());
 
@@ -235,4 +247,19 @@ process.on('uncaughtException', (error) => {
 
 process.on('unhandledRejection', (error) => {
   console.error('Unhandled Rejection:', error);
+});
+
+// Add this after your routes
+app.use((err, req, res, next) => {
+  console.error('Error:', err.message);
+  if (err.message.includes('CORS')) {
+    return res.status(403).json({
+      error: 'CORS Error',
+      message: err.message,
+    });
+  }
+  res.status(500).json({
+    error: 'Internal Server Error',
+    message: err.message,
+  });
 });
